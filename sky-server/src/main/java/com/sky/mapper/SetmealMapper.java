@@ -1,7 +1,15 @@
 package com.sky.mapper;
 
+import com.github.pagehelper.Page;
+import com.sky.annotation.AutoFill;
+import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Setmeal;
+import com.sky.entity.SetmealDish;
+import com.sky.enumeration.OperationType;
+import com.sky.vo.SetmealVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -17,4 +25,14 @@ public interface SetmealMapper {
     Integer countByCategoryId(Long id);
 
     List<Long> getSetmealIdsByDishIds(List<Long> ids);
+
+    //新增套餐
+    @AutoFill(value = OperationType.INSERT)//通过注解自动填充
+    void insert(Setmeal setmeal);
+
+    //批量插入套餐和菜品的关联数据
+
+    void insertBatch(List<SetmealDish> setmealDishes);
+//分页查询
+    Page<SetmealVO> pageQuery(SetmealPageQueryDTO setmealPageQueryDTO);
 }

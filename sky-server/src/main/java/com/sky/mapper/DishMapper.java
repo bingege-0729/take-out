@@ -36,4 +36,7 @@ public interface DishMapper {
 
 //根据主键删除数据
     void deleteByid(List<Long> ids);
+
+//   动态查询菜品数据
+    List<Dish> list(Dish dish);
 }

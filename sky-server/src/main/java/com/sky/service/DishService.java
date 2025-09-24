@@ -17,4 +17,7 @@ public interface DishService {
 
     //批量删除菜品 @parm ids
     void deleteBatch(List<Long> ids);
+
+    //根据分类id查询菜品数据
+    List<Dish> list(Long categoryId);
 }

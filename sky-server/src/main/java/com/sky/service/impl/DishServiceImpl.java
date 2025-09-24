@@ -58,7 +58,7 @@ public class DishServiceImpl implements DishService {
     }
 
     //菜品分页查询
-    @Override
+
     public PageResult pageQuery(DishPageQueryDTO dishPageQueryDTO) {
         PageHelper.startPage(dishPageQueryDTO.getPage(),dishPageQueryDTO.getPageSize());
         Page<DishVO> page=dishMapper.pageQuery(dishPageQueryDTO);
@@ -89,8 +89,16 @@ public class DishServiceImpl implements DishService {
             dishFlavorMapper.deleteByDishId(id);
         }
 
+    }
+    //根据分类id查询菜品数据
 
-        //删除关联的口味数据
-
+    public List<Dish> list(Long categoryId) {
+        //构造查询条件,builder是创建一个Dish对象，只要
+        //status为1的，就不能够删除，因为删除了，就无法在起售了
+        Dish dish=Dish.builder()
+                .categoryId(categoryId)
+                .status(StatusConstant.ENABLE)
+                .build();
+        return dishMapper.list(dish);
     }
 }
