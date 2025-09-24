@@ -58,7 +58,7 @@ public class DishServiceImpl implements DishService {
     }
 
     //菜品分页查询
-    @Override
+
     public PageResult pageQuery(DishPageQueryDTO dishPageQueryDTO) {
         PageHelper.startPage(dishPageQueryDTO.getPage(),dishPageQueryDTO.getPageSize());
         Page<DishVO> page=dishMapper.pageQuery(dishPageQueryDTO);
@@ -83,73 +83,22 @@ public class DishServiceImpl implements DishService {
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
         //删除菜品表中的数据
-//        for (Long id : ids) {
-//            dishMapper.deleteByid(ids);
-//            //删除菜品关联的口味数据
-//            dishFlavorMapper.deleteByDishId(id);
-//        }
-        //优化的批量删除
-
-        //根据菜品id集合批量删除菜品数据
-        //sql:delete from dish where id in (?,?,?)
-        dishMapper.deleteByIds(ids);
-
-
-        //根据菜品id集合批量删除菜品口味数据
-        // sql:delete from dish_flavor where dish_id in (?,?,?)/\
-        dishFlavorMapper.deleteByDishIds(ids);
-
-
-    }
-
-    //根据id查询菜品和对应的口味数据
-    @Override
-    public DishVO getByIdWithFlavors(Long id) {
-        //根据id查询菜品数据
-        Dish dish= dishMapper.getById(id);
-        List<DishFlavor> dishFlavors=dishFlavorMapper.getByDishId(id);
-        //查询菜品口味数据
-        DishVO dishVO= new DishVO();
-        //将查询到的结果封装到VO中
-        BeanUtils.copyProperties(dish,dishVO);
-        dishVO.setFlavors(dishFlavors);
-        //返回controller
-        return dishVO;
-    }
-
-    //修改菜品
-    //@parm dishDTO
-    //@return
-    public void updateWithFlavor(DishDTO dishDTO) {
-        Dish dish=new Dish();
-        BeanUtils .copyProperties(dishDTO,dish);
-        //修改菜品表基本信息
-
-        dishMapper.update(dish);
-
-        //删除原有的口味表
-        dishFlavorMapper.deleteByDishId(dishDTO.getId());
-        List<DishFlavor> flavors=dishDTO.getFlavors();
-        if(flavors!=null && flavors.size()>0){
-            flavors.forEach(dishFlavor->dishFlavor.setDishId(dishDTO.getId()));
+        for (Long id : ids) {
+            dishMapper.deleteByid(ids);
+            //删除菜品关联的口味数据
+            dishFlavorMapper.deleteByDishId(id);
         }
 
-
-
-        //重新插入口味数据
-        dishFlavorMapper.insertBatch(flavors);
     }
-    
-    /**
-     * 菜品起售停售
-     * @param status
-     * @param id
-     */
-    public void startOrStop(Integer status, Long id) {
-        Dish dish = Dish.builder()
-                .id(id)
-                .status(status)
+    //根据分类id查询菜品数据
+
+    public List<Dish> list(Long categoryId) {
+        //构造查询条件,builder是创建一个Dish对象，只要
+        //status为1的，就不能够删除，因为删除了，就无法在起售了
+        Dish dish=Dish.builder()
+                .categoryId(categoryId)
+                .status(StatusConstant.ENABLE)
                 .build();
-        dishMapper.update(dish);
+        return dishMapper.list(dish);
     }
 }
