@@ -19,3 +19,15 @@ sky:
   wechat:
     appid: wx2eda51a8dca7ae40
     secret: ac9dbd61af51f2cc49ce0da10641bb4e
+    mchid: your_mchid_here
+    mchSerialNo: your_mch_serial_no_here
+    privateKeyFilePath: your_private_key_file_path_here
+    apiV3Key: your_api_v3_key_here
+    weChatPayCertFilePath: your_wechat_pay_cert_file_path_here
+
+
+  shop:
+    address: 北京市朝阳区某某街道
+
+  baidu:
+    ak: your_baidu_ak_here
