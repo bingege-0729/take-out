@@ -25,7 +25,14 @@ public interface ShoppingCartMapper {
     @Delete("delete from shopping_cart where user_id=#{currentId}")
     void cleanShoppingCart(Long currentId);
 
-    //删除购物车中其中一个菜品
+    //根据用户id删除购物车中其中一个菜品
+    @Delete("delete from shopping_cart where id=#{id}")
+    void deleteByUserId(Long id);
+
+    //再来一点
+    void insertBatch(List<ShoppingCart> shoppingCartList);
+
+    //根据id删除购物车中一个菜品
     @Delete("delete from shopping_cart where id=#{id}")
     void deleteById(Long id);
 }
