@@ -252,24 +252,7 @@ public class OrderServiceImpl implements OrderService {
         // 根据订单号查询当前用户的订单
         Orders ordersDB = orderMapper.getByNumberAndUserId(outTradeNo, userId);
 
-        // 根据订单id更新订单的状态、支付方式、支付状态、结账时间
-        Orders orders = Orders.builder()
-                .id(ordersDB.getId())
-                .status(Orders.TO_BE_CONFIRMED)
-                .payStatus(Orders.PAID)
-                .checkoutTime(LocalDateTime.now())
-                .build();
 
-        orderMapper.update(orders);
-
-        //通过websocket向客户端浏览器推送消息 type orderId content
-        Map map = new HashMap();
-        map.put("type",1); // 1表示来单提醒 2表示客户催单
-        map.put("orderId",ordersDB.getId());
-        map.put("content","订单号：" + outTradeNo);
-
-        String json = JSON.toJSONString(map);
-        webSocketServer.sendToAllClient(json);
     }
 
     /**
@@ -419,6 +402,12 @@ public class OrderServiceImpl implements OrderService {
         return new PageResult(page.getTotal(), orderVOList);
     }
 
+    /**
+     * 获取订单菜品信息字符串
+     *
+     * @param page
+     * @return
+     */
     private List<OrderVO> getOrderVOList(Page<Orders> page) {
         // 需要返回订单菜品信息，自定义OrderVO响应结果
         List<OrderVO> orderVOList = new ArrayList<>();

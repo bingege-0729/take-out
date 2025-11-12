@@ -81,7 +81,8 @@ public interface OrderMapper {
      * @param map
      * @return
      */
-    //Integer countByMap(Map map);
+
+    Integer countByMap(Map map);
 
     /**
      * 统计指定时间区间内的销量排名前10
@@ -89,5 +90,6 @@ public interface OrderMapper {
      * @param end
      * @return
      */
-    //List<GoodsSalesDTO> getSalesTop10(LocalDateTime begin,LocalDateTime end);
+    @Select("select * from orders where order_time > #{begin} and order_time < #{end}")
+    List<GoodsSalesDTO> getSalesTop10(LocalDateTime begin,LocalDateTime end);
 }
