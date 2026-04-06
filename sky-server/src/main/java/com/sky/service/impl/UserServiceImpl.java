@@ -67,14 +67,27 @@ public class UserServiceImpl implements UserService {
     private String getOpenid(String code){
         //调用微信接口服务，获得当前微信用户的openid
         Map<String, String> map = new HashMap<>();
-        map.put("appid",weChatProperties.getAppid());
-        map.put("secret",weChatProperties.getSecret());
-        map.put("js_code",code);
-        map.put("grant_type","authorization_code");
+        map.put("appid", weChatProperties.getAppid());
+        map.put("secret", weChatProperties.getSecret());
+        map.put("js_code", code);
+        map.put("grant_type", "authorization_code");
+
         String json = HttpClientUtil.doGet(WX_LOGIN, map);
+        log.info("微信接口返回：{}", json);  // 添加日志
 
         JSONObject jsonObject = JSON.parseObject(json);
+
+        // 检查微信接口是否返回错误
+        String errcode = jsonObject.getString("errcode");
+        if (errcode != null && !errcode.equals("0")) {
+            String errmsg = jsonObject.getString("errmsg");
+            log.error("微信登录失败，errcode: {}, errmsg: {}", errcode, errmsg);
+            return null;
+        }
+
         String openid = jsonObject.getString("openid");
+        log.info("获取到openid: {}", openid);
         return openid;
     }
+
 }

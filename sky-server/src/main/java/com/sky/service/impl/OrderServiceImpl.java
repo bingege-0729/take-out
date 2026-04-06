@@ -59,8 +59,8 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 用户下单
-     * @param ordersSubmitDTO
-     * @return
+     * @param ordersSubmitDTO 用户提交的数据
+     * @return 返回OrderSubmitVO 返回订单数据
      */
     @Transactional
     public OrderSubmitVO submitOrder(OrdersSubmitDTO ordersSubmitDTO) {
@@ -82,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
         shoppingCart.setUserId(userId);
         List<ShoppingCart> shoppingCartList = shoppingCartMapper.list(shoppingCart);
 
-        if(shoppingCartList == null || shoppingCartList.size() == 0){
+        if(shoppingCartList == null || shoppingCartList.isEmpty()){
             //抛出业务异常
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
         }
