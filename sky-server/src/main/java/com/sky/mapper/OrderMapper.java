@@ -71,7 +71,7 @@ public interface OrderMapper {
      * @param orderPaidStatus
      */
     @Update("update orders set status = #{orderStatus},pay_status = #{orderPaidStatus} ,checkout_time = #{check_out_time} " +
-            "where number = #{orderNumber}")
+            "where number = #{orderNumber} and pay_status=0")
     void updateStatus(Integer orderStatus, Integer orderPaidStatus, LocalDateTime check_out_time, String orderNumber);
 
 

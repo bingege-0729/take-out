@@ -1,10 +1,10 @@
 package com.sky.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.config.SimpleRedisLock;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.*;
@@ -15,7 +15,6 @@ import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
-import com.sky.utils.HttpClientUtil;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
@@ -36,7 +35,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.sky.constant.RedisConstants.*;
 
 @Service
 @Slf4j
@@ -57,8 +59,12 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private WebSocketServer webSocketServer;
 
+    @Autowired
+    private SimpleRedisLock simpleRedisLock;
+
     /**
      * 用户下单
+     *
      * @param ordersSubmitDTO 用户提交的数据
      * @return 返回OrderSubmitVO 返回订单数据
      */
@@ -67,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
 
         //1. 处理各种业务异常（地址簿为空、购物车数据为空）
         AddressBook addressBook = addressBookMapper.getById(ordersSubmitDTO.getAddressBookId());
-        if(addressBook == null){
+        if (addressBook == null) {
             //抛出业务异常
             throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_IS_NULL);
         }
@@ -82,7 +88,7 @@ public class OrderServiceImpl implements OrderService {
         shoppingCart.setUserId(userId);
         List<ShoppingCart> shoppingCartList = shoppingCartMapper.list(shoppingCart);
 
-        if(shoppingCartList == null || shoppingCartList.isEmpty()){
+        if (shoppingCartList == null || shoppingCartList.isEmpty()) {
             //抛出业务异常
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
         }
@@ -134,7 +140,8 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 检查客户的收货地址是否超出配送范围
-     * @param address
+     * @param
+     * @return
      */
 //    private void checkOutOfRange(String address) {
 //        Map map = new HashMap();
@@ -195,47 +202,59 @@ public class OrderServiceImpl implements OrderService {
 //            throw new OrderBusinessException("超出配送范围");
 //        }
 //    }
-
-    /**
-     * 订单支付
-     * @param ordersPaymentDTO
-     * @return
-     */
+//}
     @Override
-    public OrderPaymentVO payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception{
+    public OrderPaymentVO payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception {
         // 当前登录用户id
         Long userId = BaseContext.getCurrentId();
-        User user = userMapper.getById(userId);
 
-        //调用微信支付接口，生成预支付交易单
-        /*JSONObject jsonObject = weChatPayUtil.pay(
-                ordersPaymentDTO.getOrderNumber(), //商户订单号
-                new BigDecimal(0.01), //支付金额，单位 元
-                "苍穹外卖订单", //商品描述
-                user.getOpenid() //微信用户的openid
-        );
+        // 定义锁的 Key
+        String key = LOCK_PAY_PREFIX + ordersPaymentDTO.getOrderNumber();
 
-        if (jsonObject.getString("code") != null && jsonObject.getString("code").equals("ORDERPAID")) {
-            throw new OrderBusinessException("该订单已支付");
-        }*/
+        OrderPaymentVO vo = null;
+        boolean isLocked = false; // 标记是否成功获取了锁
 
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", "ORDERPAID");
-        OrderPaymentVO vo = jsonObject.toJavaObject(OrderPaymentVO.class);
-        vo.setPackageStr(jsonObject.getString("package"));
+        try {
+            // 1. 尝试加锁
+            isLocked = simpleRedisLock.tryLock(key, String.valueOf(userId), LOCK_PAY_EXPIRE_TIME, TimeUnit.MINUTES);
 
-        //为替代微信支付成功后的数据库订单状态更新，多定义一个方法进行修改
-        Integer OrderPaidStatus = Orders.PAID; //支付状态，已支付
-        Integer OrderStatus = Orders.TO_BE_CONFIRMED;  //订单状态，待接单
+            if (isLocked) {
+                // 2. 获取锁成功，执行模拟支付逻辑
 
-        //发现没有将支付时间 check_out属性赋值，所以在这里更新
-        LocalDateTime check_out_time = LocalDateTime.now();
+                // 模拟返回对象（补充完整字段）
+                vo = new OrderPaymentVO();
+                vo.setNonceStr("mock_nonce_" + System.currentTimeMillis());
+                vo.setTimeStamp(String.valueOf(System.currentTimeMillis() / 1000));
+                vo.setPackageStr("prepay_id=mock_prepay_" + ordersPaymentDTO.getOrderNumber());
+                vo.setSignType("RSA");
+                vo.setPaySign("mock_pay_sign");
 
-        //获取订单号码
-        String orderNumber = ordersPaymentDTO.getOrderNumber();
+                // 更新数据库状态
+                Integer OrderPaidStatus = Orders.PAID;
+                Integer OrderStatus = Orders.TO_BE_CONFIRMED;
+                LocalDateTime check_out_time = LocalDateTime.now();
+                String orderNumber = ordersPaymentDTO.getOrderNumber();
 
-        log.info("调用updateStatus，用于替换微信支付更新数据库状态的问题");
-        orderMapper.updateStatus(OrderStatus, OrderPaidStatus, check_out_time, orderNumber);
+                log.info("订单支付成功，更新状态: {}", orderNumber);
+                orderMapper.updateStatus(OrderStatus, OrderPaidStatus, check_out_time, orderNumber);
+            } else {
+                // 3. 获取锁失败（可能是重复回调或并发请求）
+                log.warn("获取支付锁失败，订单号: {}", ordersPaymentDTO.getOrderNumber());
+
+                // 既然是模拟，我们可以直接返回一个默认的成功对象，避免前端报错
+                vo = new OrderPaymentVO();
+            }
+
+        } catch (Exception e) {
+            log.error("支付过程异常", e);
+            throw e;
+        } finally {
+            // 4. 【关键修复】释放锁
+            // 只有成功加锁了，才需要释放
+            if (isLocked) {
+                simpleRedisLock.unlock(key);
+            }
+        }
 
         return vo;
     }
