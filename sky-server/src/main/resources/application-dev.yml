@@ -17,8 +17,8 @@ sky:
     password: 123456
     database: DB1
   wechat:
-    appid: wx2eda51a8dca7ae40  # 确保这个appid正确
-    secret: 914b9b9d3ef54277f2197164f5f98973  # 确保这个secret正确
+    appid: your-wechar-appid  # 确保这个appid正确
+    secret: your-wechat-secret  # 确保这个secret正确
     mchid: your_mchid_here
     mchSerialNo: your_mch_serial_no_here
     privateKeyFilePath: your_private_key_file_path_here
