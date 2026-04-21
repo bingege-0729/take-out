@@ -4,11 +4,15 @@ import com.sky.constant.MessageConstant;
 import com.sky.exception.BaseException;
 import com.sky.result.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.sql.SQLException;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器，处理项目中抛出的业务异常
@@ -23,21 +27,39 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler
-    public Result exceptionHandler(BaseException ex){
+    public Result exceptionHandler(BaseException ex) {
         log.error("异常信息：{}", ex.getMessage());
         return Result.error(ex.getMessage());
     }
-    public Result exceptionHandler(SQLIntegrityConstraintViolationException ex){
-        //Duplicate entry 重复键值对'zhangsan' for key 'idx_username'
-        String message=ex.getMessage();
-        if(message.contains("Duplicate entry")) {
+
+    @ExceptionHandler
+    public Result exceptionHandler(SQLIntegrityConstraintViolationException ex) {
+        String message = ex.getMessage();
+        if (message.contains("Duplicate entry")) {
             String[] split = message.split(" ");
             String username = split[2];
             String msg = username + MessageConstant.ALREADY_EXISTS;
             return Result.error(msg);
-        }else{
+        } else {
             return Result.error(MessageConstant.UNKNOWN_ERROR);
         }
     }
-}
 
+    @ExceptionHandler
+    public Result exceptionHandler(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        log.error("参数校验失败：{}", message);
+        return Result.error(message);
+    }
+
+    @ExceptionHandler
+    public Result exceptionHandler(ConstraintViolationException ex) {
+        String message = ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(", "));
+        log.error("参数校验失败：{}", message);
+        return Result.error(message);
+    }
+}

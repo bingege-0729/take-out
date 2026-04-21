@@ -14,36 +14,34 @@ public class SimpleRedisLock {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    /**
-    * 尝试获取锁的方法
-    * @param key 锁的键
-    * @param value 锁的值
-    * @param time 锁的过期时间
-    * @param unit 时间单位
-    * @return 如果获取锁成功返回true，否则返回false
-    */
-    public boolean tryLock(String key, String value, long time, TimeUnit unit){
+    private static final String LOCK_PREFIX = "lock:";
+    private static final ThreadLocal<String> LOCK_THREAD_LOCAL = new ThreadLocal<>();
 
-    // 使用Redis的setIfAbsent方法尝试设置键值对，并设置过期时间
-    // 如果键不存在，则设置成功并返回true；如果键已存在，则设置失败并返回false
-        //生成一个随机的UUID，作为锁的值
+    public boolean tryLock(String key, long time, TimeUnit unit) {
         String uuid = UUID.randomUUID().toString();
-        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(key+uuid,value,time,unit);
-
-        //boolean和Boolean两个是不同类型，一个基本类型，一个引用类型，如果直接
-        //返回flag会直接拆箱有空指针的隐患，所以需要用BooleanUtils.isTrue()转换一下
-        return BooleanUtils.isTrue(flag);
+        String lockKey = LOCK_PREFIX + key;
+        Boolean flag = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, uuid, time, unit);
+        if (BooleanUtils.isTrue(flag)) {
+            LOCK_THREAD_LOCAL.set(uuid);
+            return true;
+        }
+        return false;
     }
 
+    public void unlock(String key) {
+        String lockKey = LOCK_PREFIX + key;
+        String uuid = LOCK_THREAD_LOCAL.get();
+        if (uuid != null) {
+            String currentValue = stringRedisTemplate.opsForValue().get(lockKey);
+            if (uuid.equals(currentValue)) {
+                stringRedisTemplate.delete(lockKey);
+            }
+            LOCK_THREAD_LOCAL.remove();
+        }
+    }
 
-    /**
-     * 解锁方法
-     * 根据给定的键从Redis中删除对应的值
-     * @param key 要删除的键，用于标识需要解锁的资源
-     */
-    public void unlock(String key){
-
-        // 使用StringRedisTemplate删除指定key的数据
-        stringRedisTemplate.delete(key);
+    @Deprecated
+    public boolean tryLock(String key, String value, long time, TimeUnit unit) {
+        return tryLock(key, time, unit);
     }
 }

@@ -8,8 +8,8 @@ sky:
     password: 123456
   alioss:
     endpoint: oss-cn-hangzhou.aliyuncs.com
-    access-key-id: LTAI5tPeFLzsPPT8gG3LPW64
-    access-key-secret: U6k1brOZ8gaOIXv3nXbulGTUzy6Pd7
+    access-key-id: ACCESS-KEY-ID
+    access-key-secret: ACCESS-KEY-SECRET
     bucket-name: sky-take-out
   redis:
     host: localhost
@@ -17,8 +17,8 @@ sky:
     password: 123456
     database: DB1
   wechat:
-    appid: your-wechar-appid  # 确保这个appid正确
-    secret: your-wechat-secret  # 确保这个secret正确
+    appid: WECHAT-APPID  # 确保这个appid正确
+    secret: WECHAT-SECRET  # 确保这个secret正确
     mchid: your_mchid_here
     mchSerialNo: your_mch_serial_no_here
     privateKeyFilePath: your_private_key_file_path_here

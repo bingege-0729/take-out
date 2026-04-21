@@ -15,8 +15,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +29,7 @@ import java.util.Map;
 @RequestMapping("/admin/employee")
 @Slf4j
 @Api(tags = "员工管理相关接口")
+@Validated
 public class EmployeeController {
 
     @Autowired
@@ -42,7 +45,7 @@ public class EmployeeController {
      */
     @PostMapping("/login")
     @ApiOperation(value = "员工登入")
-    public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO) {
+    public Result<EmployeeLoginVO> login(@RequestBody @Valid EmployeeLoginDTO employeeLoginDTO) {
         log.info("员工登录：{}", employeeLoginDTO);
 
         Employee employee = employeeService.login(employeeLoginDTO);
@@ -84,9 +87,8 @@ public class EmployeeController {
 
     @PostMapping
     @ApiOperation("新增员工")
-    public Result save(@RequestBody EmployeeDTO employeeDTO){
-        System.out.println("当前的线程"+Thread.currentThread().getId());
-        log.info("新增员工：{}",employeeDTO);//花括号占位符
+    public Result save(@RequestBody @Valid EmployeeDTO employeeDTO){
+        log.info("新增员工：{}",employeeDTO);
         employeeService.save(employeeDTO);
         return Result.success();
     }
@@ -104,9 +106,6 @@ public class EmployeeController {
 //    @parm status
 //    @parm id
 //    @return
-
-
-
     //查询类操作最好使用泛型，非查询的可以不用 //地址注释,命名一致Path就不用写清楚
     @PostMapping("/status/{status}")
     @ApiOperation("启用禁用员工账号")
@@ -126,7 +125,7 @@ public class EmployeeController {
     //编辑员工信息
     @PutMapping
     @ApiOperation("编辑员工信息")
-    public Result update(@RequestBody EmployeeDTO employeeDTO){
+    public Result update(@RequestBody @Valid EmployeeDTO employeeDTO){
         log.info("编辑员工信息:{}",employeeDTO);
         employeeService.update(employeeDTO);
         return Result.success();

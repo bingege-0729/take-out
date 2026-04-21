@@ -1,7 +1,7 @@
 package com.sky.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.config.SimpleRedisLock;
@@ -52,8 +52,6 @@ public class OrderServiceImpl implements OrderService {
     private AddressBookMapper addressBookMapper;
     @Autowired
     private ShoppingCartMapper shoppingCartMapper;
-    @Autowired
-    private UserMapper userMapper;
     @Autowired
     private WeChatPayUtil weChatPayUtil;
     @Autowired
@@ -216,7 +214,7 @@ public class OrderServiceImpl implements OrderService {
 
         try {
             // 1. 尝试加锁
-            isLocked = simpleRedisLock.tryLock(key, String.valueOf(userId), LOCK_PAY_EXPIRE_TIME, TimeUnit.MINUTES);
+            isLocked = simpleRedisLock.tryLock(key, LOCK_PAY_EXPIRE_TIME, TimeUnit.MINUTES);
 
             if (isLocked) {
                 // 2. 获取锁成功，执行模拟支付逻辑

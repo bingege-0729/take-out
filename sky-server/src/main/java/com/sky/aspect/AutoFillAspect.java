@@ -5,20 +5,19 @@ import com.sky.annotation.AutoFill;
 import com.sky.constant.AutoFillConstant;
 import com.sky.context.BaseContext;
 import com.sky.enumeration.OperationType;
-import io.netty.handler.codec.serialization.ObjectEncoder;
+
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.Signature;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.BeanUtils;
+
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 
 @Aspect
@@ -61,10 +60,10 @@ public class AutoFillAspect {
                 Method setUpdatedUser=entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER,Long.class);
 
                 //反射来赋值
-                setUpdatedTime.invoke(entity,now);
+                setCreatedTime.invoke(entity,now);
                 setCreatedUser.invoke(entity,currentId);
                 setUpdatedTime.invoke(entity,now);
-                setUpdatedTime.invoke(entity,currentId);
+                setUpdatedUser.invoke(entity,currentId);
             }catch (Exception e){
                 e.printStackTrace();
             }
